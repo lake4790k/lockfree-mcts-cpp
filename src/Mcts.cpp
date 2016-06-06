@@ -1,5 +1,7 @@
+#include <iostream>
 
 
-
-int main() {}
+int main() {
+  std::cout << "finished\n";
+}
 
