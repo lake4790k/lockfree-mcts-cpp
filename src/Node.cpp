@@ -2,6 +2,8 @@
 #include <vector>
 #include <memory>
 #include <cmath>
+#include <cassert>
+#include <limits>
 #include "State.hpp"
 
  
@@ -49,7 +51,7 @@ public:
     }
 
     std::shared_ptr<Node> expand() {
-        uint16_t untaken = untakenIndex.fetch_sub(-1);
+        uint16_t untaken = untakenIndex.fetch_sub(1);
         if (untaken < 0) return std::shared_ptr<Node>(NULL);
 
         uint16_t untakenAction = untakenActions->at(untaken);
@@ -76,13 +78,49 @@ public:
         return visits.load() > 0;
     }
 
+    double getUctValue(double c) {
+        int visits1 = visits.load();
+        return rewards.load() / visits1 + c * std::sqrt(std::log(parent->visits.load()) / visits1);
+    }
+
+    std::shared_ptr<Node> childToExploit() {
+        return getBestChild(NO_EXPLORATION);
+    }
+
+    std::shared_ptr<Node> childToExplore() {
+        return getBestChild(EXPLORATION_CONSTANT);
+    }
+
+    std::shared_ptr<Node> getBestChild(double c) {
+        assert(isExpanded());
+        std::shared_ptr<Node> best;
+        for(;;) {
+            double bestValue = std::numeric_limits<double>::lowest();
+            for (std::shared_ptr<Node>& child : children) {
+                while (!child) {}
+                while (!child->isVisited()) {}
+
+                double childrenValue = child->getUctValue(c);
+                if (childrenValue > bestValue) {
+                    best = child;
+                    bestValue = childrenValue;
+                }
+            }
+        }
+        return best;
+    }
+
+    std::shared_ptr<State> getState() {
+        return state;
+    }
+
 private:
 
     std::atomic<uint16_t> untakenIndex;
     std::atomic<uint64_t> visits;
 
     std::vector<std::shared_ptr<Node>> children;
-    std::unique_ptr<std::vector<uint16_t>> untakenActions;
+    std::shared_ptr<std::vector<uint16_t>> untakenActions;
     std::shared_ptr<State> state;
     
     const uint16_t action;
