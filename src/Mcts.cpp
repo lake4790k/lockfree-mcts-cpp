@@ -1,4 +1,3 @@
-#include <iostream>
 #include <chrono>
 #include "State.hpp"
 #include "Node.cpp"
@@ -21,9 +20,9 @@ public:
     uint8_t getLastAction() { return lastAction; }
     uint64_t getTotalIteration() { return totalIterations.load(); }
 
-    void setRoot(uint8_t action, State& state) {
+    void setRoot(uint8_t action, State::Ptr state) {
         if (root) {
-            std::shared_ptr<Node> child = root->findChildFor(action);
+            Node::Ptr child = root->findChildFor(action);
             if (child) {
                 root = child;
                 root->releaseParent();
@@ -42,8 +41,8 @@ public:
         // TODO
     }
 
-    std::shared_ptr<State> takeAction() {
-        std::shared_ptr<Node> actionNode  = root->childToExploit();
+    State::Ptr takeAction() {
+        Node::Ptr actionNode  = root->childToExploit();
         lastAction = actionNode->getAction();
         root = actionNode;
         return actionNode->getState();
@@ -64,16 +63,16 @@ private:
     }
 
     void growTree() {
-        std::shared_ptr<Node> child = selectOrExpand();
-        std::unique_ptr<State> terminalState = simulate(child);
+        Node::Ptr child = selectOrExpand();
+        State::Ptr terminalState = simulate(child);
         backPropagate(child, terminalState);
     }
 
-    std::shared_ptr<Node> selectOrExpand() {
-        std::shared_ptr<Node> node(root);
+    Node::Ptr selectOrExpand() {
+        Node::Ptr node(root);
         while (!node->isTerminal()) {
             while (!node->isExpanded()) {
-                std::shared_ptr<Node> expandedNode = node->expand();
+                Node::Ptr expandedNode = node->expand();
                 if (expandedNode)
                     return expandedNode;
             }
@@ -82,9 +81,9 @@ private:
         return node;
     }
 
-    std::unique_ptr<State> simulate(const std::shared_ptr<Node>& node) {
+    State::Ptr simulate(const Node::Ptr& node) {
         // TODO copy constructor
-        std::unique_ptr<State> state(&node->getState()->copy());
+        State::Ptr state(node->getState()->copy());
         while (!state->isTerminal()) {
             auto actions = state->getAvailableActions();
             uint16_t randomIdx = 0; // TODO
@@ -95,7 +94,7 @@ private:
         return state;
     }
 
-    void backPropagate(const std::shared_ptr<Node>& bottom, const std::unique_ptr<State> & terminalState) {
+    void backPropagate(const Node::Ptr& bottom, const State::Ptr& terminalState) {
         Node* node = bottom.get();
         while (node) {
             double reward = terminalState->getRewardFor(node->getPreviousAgent());
@@ -112,11 +111,6 @@ private:
 
     uint8_t lastAction{0};
 
-    std::shared_ptr<Node> root{NULL};
+    Node::Ptr root{NULL};
 };
-
-
-int main() {
-  std::cout << "finished\n";
-}
 

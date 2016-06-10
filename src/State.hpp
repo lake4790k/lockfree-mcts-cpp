@@ -6,6 +6,7 @@
 
 class State {
 public:
+    typedef std::shared_ptr<State> Ptr;
 
     virtual ~State();
 
@@ -17,13 +18,13 @@ public:
 
     virtual double getRewardFor(uint8_t agent) = 0;
 
-    virtual State& takeAction(uint16_t action) = 0;
+    virtual State::Ptr takeAction(uint16_t action) = 0;
 
     virtual void applyAction(uint16_t action) = 0;
 
     virtual uint8_t getWinner() = 0;
 
-    virtual State& copy() = 0;
+    virtual State::Ptr copy() = 0;
 };
 
 #endif

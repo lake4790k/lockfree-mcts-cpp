@@ -7,31 +7,34 @@
 #include "State.hpp"
 
  
-const double EXPLORATION_CONSTANT = std::sqrt(2);
-const double NO_EXPLORATION = 0;
 
 class Node {
 public:
-    Node(Node* parent, uint16_t action, State& state):
+    typedef std::shared_ptr<Node> Ptr;
+
+    const double EXPLORATION_CONSTANT = std::sqrt(2);
+    const double NO_EXPLORATION = 0;
+        
+    Node(Node* parent, uint16_t action, const State::Ptr& state):
         parent(parent),
         action(action),
-        state(&state),
-        untakenActions(state.getAvailableActions()),
+        state(state),
+        untakenActions(state->getAvailableActions()),
         untakenIndex(untakenActions->size() - 1) {
 
         for (int i = 0; i < untakenActions->size(); i++) {
-            children.emplace_back(std::shared_ptr<Node>(NULL));
+            children.emplace_back(Node::Ptr(NULL));
         }
     }
 
     ~Node() {}
 
-    std::shared_ptr<Node> findChildFor(uint16_t action) {
+    Node::Ptr findChildFor(uint16_t action) {
         for (auto& child : children) {
             if (!child) continue;
             if (child->action == action) return child;
         }
-        return std::shared_ptr<Node>(NULL);
+        return Node::Ptr(NULL);
     }
 
     void releaseParent() {
@@ -50,19 +53,20 @@ public:
         return untakenIndex.load() < 0;
     }
 
-    std::shared_ptr<Node> expand() {
+    Node::Ptr expand() {
         uint16_t untaken = untakenIndex.fetch_sub(1);
-        if (untaken < 0) return std::shared_ptr<Node>(NULL);
+        if (untaken < 0) return Node::Ptr(NULL);
 
         uint16_t untakenAction = untakenActions->at(untaken);
-        State& actionState = state->takeAction(untakenAction);
+        State::Ptr actionState = state->takeAction(untakenAction);
         auto it = children.cbegin();
         it += untaken-1;
-        children.emplace(it, std::make_shared<Node>(this, untaken, actionState));
+        Node::Ptr node = std::make_shared<Node>(this, untaken, actionState);
+        children.emplace(it, node);
         return children.at(untaken);
     }
 
-    std::shared_ptr<Node> getParent() {
+    Node::Ptr getParent() {
         return parent;
     }
 
@@ -83,20 +87,20 @@ public:
         return rewards.load() / visits1 + c * std::sqrt(std::log(parent->visits.load()) / visits1);
     }
 
-    std::shared_ptr<Node> childToExploit() {
+    Node::Ptr childToExploit() {
         return getBestChild(NO_EXPLORATION);
     }
 
-    std::shared_ptr<Node> childToExplore() {
+    Node::Ptr childToExplore() {
         return getBestChild(EXPLORATION_CONSTANT);
     }
 
-    std::shared_ptr<Node> getBestChild(double c) {
+    Node::Ptr getBestChild(double c) {
         assert(isExpanded());
-        std::shared_ptr<Node> best;
+        Node::Ptr best;
         for(;;) {
             double bestValue = std::numeric_limits<double>::lowest();
-            for (std::shared_ptr<Node>& child : children) {
+            for (Node::Ptr& child : children) {
                 while (!child) {}
                 while (!child->isVisited()) {}
 
@@ -106,11 +110,11 @@ public:
                     bestValue = childrenValue;
                 }
             }
-        }
+    }
         return best;
     }
 
-    std::shared_ptr<State> getState() {
+    State::Ptr getState() {
         return state;
     }
 
@@ -119,13 +123,13 @@ private:
     std::atomic<uint16_t> untakenIndex;
     std::atomic<uint64_t> visits;
 
-    std::vector<std::shared_ptr<Node>> children;
+    std::vector<Node::Ptr> children;
     std::shared_ptr<std::vector<uint16_t>> untakenActions;
-    std::shared_ptr<State> state;
+    State::Ptr state;
     
     const uint16_t action;
 
-    std::shared_ptr<Node> parent;
+    Node::Ptr parent;
     std::atomic<uint64_t> rewards;
 
 };
