@@ -1,4 +1,5 @@
 #include <memory>
+#include <random>
 #include "Mcts.cpp"
 
 class SelfPlay {
@@ -16,7 +17,8 @@ public:
 
 
     uint8_t play() {
-        uint8_t c = 0; // TODO random
+        std::uniform_int_distribution<uint8_t> uniform01(0,1);
+        uint8_t c = uniform01(random);
         uint8_t player = 0;
         uint8_t action = 0;
         while (!state->isTerminal()) {
@@ -34,17 +36,13 @@ public:
             : 0;
     }
 
-    void stop() {
-        mcts1->stop();
-        mcts2->stop();
-    }
 
 private:
+    std::mt19937 random;
 
     State::Ptr state;
     std::unique_ptr<Mcts> mcts1;
     std::unique_ptr<Mcts> mcts2;
 
 };
-
 

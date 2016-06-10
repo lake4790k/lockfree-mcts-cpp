@@ -1,4 +1,6 @@
+#include <random>
 #include <chrono>
+#include <future>
 #include "State.hpp"
 #include "Node.cpp"
 
@@ -6,16 +8,12 @@ class Mcts {
 public:
     const uint16_t NO_ACTION = 0;
 
+    typedef std::chrono::high_resolution_clock clock;
+
     Mcts(uint8_t threads, uint64_t timePerActionMillis, uint64_t maxIterations):
         threads(threads), 
         timePerActionMillis(timePerActionMillis), 
-        maxIterations(maxIterations) {
-
-    }
-
-    void stop() {
-        // TODO
-    }
+        maxIterations(maxIterations) {   }
 
     uint8_t getLastAction() { return lastAction; }
     uint64_t getTotalIteration() { return totalIterations.load(); }
@@ -38,7 +36,13 @@ public:
             return;
         }
 
-        // TODO
+        std::vector<std::future<void>> futures;
+        for (int t=0; t<threads; t++) {
+            futures.emplace_back(std::async(std::launch::async, &Mcts::doThink, this));
+        }
+        for (auto& future : futures) {
+            future.get();
+        }
     }
 
     State::Ptr takeAction() {
@@ -48,23 +52,30 @@ public:
         return actionNode->getState();
     }
 
-
 private:
 
     void doThink() {
-        std::chrono::time_point<std::chrono::system_clock> start;
-        start = std::chrono::system_clock::now();
+        std::mt19937 random;
+        auto start = clock::now();
         uint64_t i = 0;
-        // TODO time
-        while (i++ < maxIterations || !root->isExpanded()) {
-            growTree();
+        for (;;)  {
+            growTree(random);
+
             totalIterations++;
+            auto now = clock::now();
+            auto since = now - start;
+            auto millisSince = std::chrono::duration_cast<std::chrono::milliseconds>(since);
+
+            if (i++ > maxIterations || millisSince.count() > timePerActionMillis) {
+                if (!root->isExpanded()) continue;
+                break;
+            }
         }
     }
 
-    void growTree() {
+    void growTree(std::mt19937& random) {
         Node::Ptr child = selectOrExpand();
-        State::Ptr terminalState = simulate(child);
+        State::Ptr terminalState = simulate(child, random);
         backPropagate(child, terminalState);
     }
 
@@ -73,20 +84,21 @@ private:
         while (!node->isTerminal()) {
             while (!node->isExpanded()) {
                 Node::Ptr expandedNode = node->expand();
-                if (expandedNode)
+                if (expandedNode) // can be NULL if other thread computes it
                     return expandedNode;
             }
-            node = node->childToExplore();
+            node = node->childToExplore(); // spins until all childs are computed
         }
         return node;
     }
 
-    State::Ptr simulate(const Node::Ptr& node) {
+    State::Ptr simulate(const Node::Ptr& node, std::mt19937& random) {
         // TODO copy constructor
         State::Ptr state(node->getState()->copy());
         while (!state->isTerminal()) {
             auto actions = state->getAvailableActions();
-            uint16_t randomIdx = 0; // TODO
+            std::uniform_int_distribution<uint16_t> uniform(0, actions->size());
+            uint16_t randomIdx = uniform(random);
             uint16_t action = actions->at(randomIdx);
             state->applyAction(action);
         }

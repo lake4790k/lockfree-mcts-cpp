@@ -1,5 +1,4 @@
-#ifndef _STATE
-#define _STATE
+#pragma once
 
 #include <vector>
 #include <memory>
@@ -24,7 +23,5 @@ public:
 
     virtual uint8_t getWinner() = 0;
 
-    virtual State::Ptr copy() = 0;
+    virtual State* copy() = 0;
 };
-
-#endif
