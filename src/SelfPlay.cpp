@@ -1,3 +1,4 @@
+#include <iostream>
 #include <memory>
 #include <random>
 #include "Mcts.cpp"
@@ -21,14 +22,19 @@ public:
         uint8_t c = uniform01(random);
         uint8_t player = 0;
         uint8_t action = 0;
+std::cout << "starting game\n";
         while (!state->isTerminal()) {
             player = 1 + c++ %2;
             Mcts* mcts = player == 1 ? mcts1.get() : mcts2.get();
 
             mcts->setRoot(action, state);
+std::cout << "thinkink... ";
             mcts->think();
+std::cout << "DONE\n ";
+
             state = mcts->takeAction();
             action = mcts->getLastAction();
+std::cout << "took action " << action << "\n";
         }
         bool draw = state->getWinner() == 0;
         return !draw

@@ -1,6 +1,7 @@
 #include <random>
 #include <chrono>
 #include <future>
+#include <iostream>
 #include "State.hpp"
 #include "Node.cpp"
 
@@ -60,7 +61,6 @@ private:
         uint64_t i = 0;
         for (;;)  {
             growTree(random);
-
             totalIterations++;
             auto now = clock::now();
             auto since = now - start;
@@ -97,7 +97,7 @@ private:
         State::Ptr state(node->getState()->copy());
         while (!state->isTerminal()) {
             auto actions = state->getAvailableActions();
-            std::uniform_int_distribution<uint16_t> uniform(0, actions->size());
+            std::uniform_int_distribution<uint16_t> uniform(0, actions->size()-1);
             uint16_t randomIdx = uniform(random);
             uint16_t action = actions->at(randomIdx);
             state->applyAction(action);

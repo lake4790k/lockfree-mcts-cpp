@@ -4,9 +4,9 @@
 #include <cmath>
 #include <cassert>
 #include <limits>
-#include "State.hpp"
+#include <iostream>
 
- 
+#include "State.hpp"
 
 class Node {
 public:
@@ -59,11 +59,8 @@ public:
 
         uint16_t untakenAction = untakenActions->at(untaken);
         State::Ptr actionState = state->takeAction(untakenAction);
-        auto it = children.cbegin();
-        it += untaken-1;
-        Node::Ptr node = std::make_shared<Node>(this, untaken, actionState);
-        children.emplace(it, node);
-        return children.at(untaken);
+        children[untaken].reset(new Node(this, untaken, actionState));
+        return children[untaken];
     }
 
     Node::Ptr getParent() {
@@ -75,6 +72,7 @@ public:
     }
 
     void updateRewards(uint64_t reward) {
+        visits++;
         rewards += reward;
     }
 
@@ -98,7 +96,7 @@ public:
     Node::Ptr getBestChild(double c) {
         assert(isExpanded());
         Node::Ptr best;
-        for(;;) {
+        while (!best) {
             double bestValue = std::numeric_limits<double>::lowest();
             for (Node::Ptr& child : children) {
                 while (!child) {}
@@ -110,7 +108,7 @@ public:
                     bestValue = childrenValue;
                 }
             }
-    }
+        }
         return best;
     }
 
@@ -120,11 +118,11 @@ public:
 
 private:
 
-    std::atomic<uint16_t> untakenIndex;
     std::atomic<uint64_t> visits;
 
     std::vector<Node::Ptr> children;
     std::shared_ptr<std::vector<uint16_t>> untakenActions;
+    std::atomic<int16_t> untakenIndex;
     State::Ptr state;
     
     const uint16_t action;

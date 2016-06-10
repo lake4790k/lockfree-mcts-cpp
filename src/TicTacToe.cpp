@@ -37,6 +37,7 @@ public:
             }
         }
         assert(idx==remaining);
+
         return actions;
     }
 

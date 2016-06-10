@@ -7,7 +7,7 @@ class State {
 public:
     typedef std::shared_ptr<State> Ptr;
 
-    virtual ~State();
+    virtual ~State() {};
 
     virtual std::shared_ptr<std::vector<uint16_t>> getAvailableActions() = 0;
 
