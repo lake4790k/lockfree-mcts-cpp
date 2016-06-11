@@ -49,7 +49,7 @@ public:
 private:
 
     std::array<uint16_t, 3> testScores(uint8_t threads1, uint32_t maxIterations1) {
-        std::array<uint16_t, 3> scores;
+        std::array<uint16_t, 3> scores { 0, 0 , 0 };
         uint8_t threads2 = 1;
         for (uint16_t i=0; i < times; i++) {
 //std::cout << "starting game\n";
