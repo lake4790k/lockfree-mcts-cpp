@@ -1,4 +1,3 @@
-#include <memory>
 #include <cassert>
 #include <vector>
 
@@ -6,37 +5,46 @@
 
 class TicTacToe : public State {
 public:
-    const uint8_t NOT_OVER_YET = 99;
-    const uint8_t DRAW = 0;
+    static constexpr uint8_t NOT_OVER_YET = 99;
+    static constexpr uint8_t DRAW = 0;
 
     TicTacToe(uint8_t dims, uint8_t needed):
         dim(dims),
         needed(needed),
-        board(dims*dims, 0) {
+        board(dims*dims, 0),
+        winner(NOT_OVER_YET) {
 
         assert(dims >= needed);
     }
 
-    TicTacToe(TicTacToe& o, uint16_t action):
-        dim(o.dim),
-        needed(o.needed),
-        round(o.round),
-        agent(3 - o.agent),
-        board(o.board) {
+    TicTacToe(TicTacToe* o, uint16_t action):
+        dim(o->dim),
+        needed(o->needed),
+        round(o->round),
+        agent(3 - o->agent),
+        board(o->board) {
 
         winner = updateWith(action);
     }
 
-    std::shared_ptr<std::vector<uint16_t>> getAvailableActions() {
+    TicTacToe(TicTacToe* o):
+        dim(o->dim),
+        needed(o->needed),
+        round(o->round),
+        agent(o->agent),
+        board(o->board),
+        winner(o->winner) { }
+
+    std::vector<uint16_t>* getAvailableActions() {
         uint16_t remaining = dim*dim - round;
-        std::shared_ptr<std::vector<uint16_t>> actions = std::make_shared<std::vector<uint16_t>>(remaining);
+        std::vector<uint16_t>* actions = new std::vector<uint16_t>(remaining);
         uint16_t idx = 0;
         for (uint8_t i=0; i < board.size(); i++) {
             if (board[i] == 0) {
                 actions->at(idx++) = i;
             }
         }
-        assert(idx==remaining);
+        if (idx!=remaining) throw std::logic_error("idx!=remaining");
 
         return actions;
     }
@@ -58,8 +66,8 @@ public:
             : 0.;
     };
 
-    State::Ptr takeAction(uint16_t action) {
-        return std::make_shared<TicTacToe>(*this, action);
+    State* takeAction(uint16_t action) {
+        return new TicTacToe(this, action);
     }
 
     void applyAction(uint16_t action) {
@@ -72,11 +80,13 @@ public:
     };
 
     State* copy() {
-        return new TicTacToe(*this);
+        return new TicTacToe(this);
     };
 
 
 private:
+    TicTacToe( const TicTacToe& other ) = delete;
+    TicTacToe& operator=( const TicTacToe& ) = delete; // non copyable
 
     uint8_t at(uint8_t r, uint8_t c) {
         return board[dim*r + c];
@@ -139,8 +149,8 @@ private:
     }
 
 
-    uint8_t dim;
-    uint8_t needed;
+    const uint8_t dim;
+    const uint8_t needed;
 
     std::vector<uint8_t> board;
     uint8_t agent{1};

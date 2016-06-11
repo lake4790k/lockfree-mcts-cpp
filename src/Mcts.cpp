@@ -7,7 +7,7 @@
 
 class Mcts {
 public:
-    const uint16_t NO_ACTION = 0;
+    const uint16_t NO_ACTION = -1;
 
     typedef std::chrono::high_resolution_clock clock;
 
@@ -16,19 +16,29 @@ public:
         timePerActionMillis(timePerActionMillis), 
         maxIterations(maxIterations) {   }
 
+    ~Mcts() {
+        delete root;
+    }
+
     uint8_t getLastAction() { return lastAction; }
     uint64_t getTotalIteration() { return totalIterations.load(); }
 
-    void setRoot(uint8_t action, State::Ptr state) {
+    void setRoot(uint8_t action, State* state) {
         if (root) {
-            Node::Ptr child = root->findChildFor(action);
+            Node* child = root->findChildFor(action);
             if (child) {
+                root->deleteChildrenExcept(child);
+                delete root;
                 root = child;
                 root->releaseParent();
-                return;
+                delete state;
+                return;     
+            } else {
+            // throw std::logic_error("could not find root");
+                delete root;
             }
         }
-        root = std::make_shared<Node>((Node*) NULL, NO_ACTION, state);
+        root = new Node(NULL, NO_ACTION, state->copy());
     }
 
     void think() {
@@ -46,17 +56,21 @@ public:
         }
     }
 
-    State::Ptr takeAction() {
-        Node::Ptr actionNode  = root->childToExploit();
+    State* takeAction() {
+        Node* actionNode = root->childToExploit();
         lastAction = actionNode->getAction();
+        root->deleteChildrenExcept(actionNode);
+        delete root;
         root = actionNode;
-        return actionNode->getState();
+        root->releaseParent();
+        return actionNode->getStateCopy();
     }
 
 private:
 
     void doThink() {
-        std::mt19937 random;
+        std::random_device rd;    
+        std::mt19937 random(rd());
         auto start = clock::now();
         uint64_t i = 0;
         for (;;)  {
@@ -67,34 +81,31 @@ private:
             auto millisSince = std::chrono::duration_cast<std::chrono::milliseconds>(since);
 
             if (i++ > maxIterations || millisSince.count() > timePerActionMillis) {
-                if (!root->isExpanded()) continue;
                 break;
             }
         }
     }
 
     void growTree(std::mt19937& random) {
-        Node::Ptr child = selectOrExpand();
-        State::Ptr terminalState = simulate(child, random);
-        backPropagate(child, terminalState);
+        Node* child = selectOrExpand();
+        double reward = simulate(child, random);
+        backPropagate(child, reward);
     }
 
-    Node::Ptr selectOrExpand() {
-        Node::Ptr node(root);
+    Node* selectOrExpand() {
+        Node* node = root;
         while (!node->isTerminal()) {
-            while (!node->isExpanded()) {
-                Node::Ptr expandedNode = node->expand();
-                if (expandedNode) // can be NULL if other thread computes it
-                    return expandedNode;
-            }
+            Node* expandedNode = node->expand();
+            if (expandedNode)
+                return expandedNode;
+
             node = node->childToExplore(); // spins until all childs are computed
         }
         return node;
     }
 
-    State::Ptr simulate(const Node::Ptr& node, std::mt19937& random) {
-        // TODO copy constructor
-        State::Ptr state(node->getState()->copy());
+    double simulate(Node* node, std::mt19937& random) {
+        State* state = node->getStateCopy();
         while (!state->isTerminal()) {
             auto actions = state->getAvailableActions();
             std::uniform_int_distribution<uint16_t> uniform(0, actions->size()-1);
@@ -102,16 +113,15 @@ private:
             uint16_t action = actions->at(randomIdx);
             state->applyAction(action);
         }
-
-        return state;
+        double reward = state->getRewardFor(node->getPreviousAgent());
+        delete state;
+        return reward;
     }
 
-    void backPropagate(const Node::Ptr& bottom, const State::Ptr& terminalState) {
-        Node* node = bottom.get();
+    void backPropagate(Node* node, double reward) {
         while (node) {
-            double reward = terminalState->getRewardFor(node->getPreviousAgent());
             node->updateRewards(reward);
-            node = node->getParent().get();
+            node = node->getParent();
         }
     }
 
@@ -123,6 +133,6 @@ private:
 
     uint8_t lastAction{0};
 
-    Node::Ptr root{NULL};
+    Node* root{NULL};
 };
 
