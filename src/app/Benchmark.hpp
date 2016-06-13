@@ -6,7 +6,6 @@
 #include <array>
 #include <cstdio>
 #include <string>
-#include "SelfPlay.hpp"
 
 class Benchmark {
 public:

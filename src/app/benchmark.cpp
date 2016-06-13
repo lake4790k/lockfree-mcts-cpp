@@ -4,8 +4,8 @@
 #include <array>
 #include <cstdio>
 #include <string>
-#include "SelfPlay.hpp"
-#include "TicTacToe.hpp"
+#include "../SelfPlay.hpp"
+#include "../TicTacToe.hpp"
 #include "Benchmark.hpp"
 
 
