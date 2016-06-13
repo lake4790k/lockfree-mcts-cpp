@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdio>
 #include <string>
+#include <memory>
 #include "../SelfPlay.hpp"
 #include "../TicTacToe.hpp"
 #include "Benchmark.hpp"
@@ -54,9 +55,16 @@ void Benchmark::run() {
 std::array<uint16_t, 3> Benchmark::testScores(uint8_t threads1, uint32_t maxIterations1) {
     std::array<uint16_t, 3> scores { 0, 0 , 0 };
     uint8_t threads2 = 1;
+
+    std::shared_ptr<Threads> pool1 = std::make_shared<Threads>(threads1);
+    std::shared_ptr<Threads> pool2 = std::make_shared<Threads>(threads2);
+
     for (uint16_t i=0; i < times; i++) {
         State* startState = new TicTacToe(dim, needed);
-        SelfPlay play(threads1,
+        SelfPlay play(
+            pool1,
+            pool2,
+            threads1,
             threads2,
             timerPerActionSec,
             timerPerActionSec,

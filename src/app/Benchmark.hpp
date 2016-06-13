@@ -1,11 +1,6 @@
 #pragma once
 
-#include <iostream>
-#include <array>
-#include <thread>
-#include <array>
 #include <cstdio>
-#include <string>
 
 class Benchmark {
 public:

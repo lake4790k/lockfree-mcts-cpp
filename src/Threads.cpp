@@ -37,7 +37,6 @@ Threads::~Threads() {
 
 std::future<void> Threads::invoke(std::function<void()> job) {
     std::shared_ptr<std::packaged_task<void()>> packaged_job = std::make_shared<std::packaged_task<void()>>(job);
-
     {
         std::unique_lock<std::mutex> lock(this->mutex);
         jobs.emplace([packaged_job] () { (*packaged_job)(); } );

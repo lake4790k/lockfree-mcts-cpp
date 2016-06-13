@@ -1,12 +1,11 @@
-#include <random>
-#include <chrono>
 #include <future>
 #include <iostream>
 #include "State.hpp"
 #include "Node.hpp"
 #include "Mcts.hpp"
 
-Mcts::Mcts(uint8_t threads, uint64_t timePerActionMillis, uint64_t maxIterations):
+Mcts::Mcts(std::shared_ptr<Threads> pool, uint8_t threads, uint64_t timePerActionMillis, uint64_t maxIterations):
+    pool(pool),
     threads(threads), 
     timePerActionMillis(timePerActionMillis), 
     maxIterations(maxIterations),
@@ -45,7 +44,11 @@ void Mcts::think() {
 
     std::vector<std::future<void>> futures;
     for (int t=0; t<threads; t++) {
-        futures.emplace_back(std::async(std::launch::async, &Mcts::doThink, this));
+        futures.emplace_back(
+            pool->invoke([this] {
+                this->doThink();
+            })
+        );
     }
     for (auto& future : futures) {
         future.get();

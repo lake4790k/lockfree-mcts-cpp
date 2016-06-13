@@ -3,9 +3,12 @@
 #include <atomic>
 #include <chrono>
 #include <random>
+#include <memory>
+#include "Threads.hpp"
 
 class Node;
 class State;
+
 
 class Mcts {
 public:
@@ -13,7 +16,7 @@ public:
 
     typedef std::chrono::high_resolution_clock clock;
 
-    Mcts(uint8_t threads, uint64_t timePerActionMillis, uint64_t maxIterations);
+    Mcts(std::shared_ptr<Threads> pool, uint8_t threads, uint64_t timePerActionMillis, uint64_t maxIterations);
     ~Mcts();
 
     uint8_t getLastAction();
@@ -49,5 +52,7 @@ private:
     uint8_t lastAction{0};
 
     Node* root{NULL};
+
+    std::shared_ptr<Threads> pool;
 };
 
