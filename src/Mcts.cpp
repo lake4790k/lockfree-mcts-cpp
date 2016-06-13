@@ -28,7 +28,6 @@ void Mcts::setRoot(uint8_t action, State* state) {
             delete root;
             root = child;
             root->releaseParent();
-            delete state;
             return;     
         } else {
         // throw std::logic_error("could not find root");
@@ -106,6 +105,7 @@ uint8_t Mcts::simulate(Node* node, std::mt19937& random) {
         uint16_t randomIdx = uniform(random);
         uint16_t action = actions->at(randomIdx);
         state->applyAction(action);
+        delete actions; 
     }
     uint8_t reward = state->getRewardFor(node->getPreviousAgent());
     delete state;

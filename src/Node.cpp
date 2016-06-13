@@ -24,6 +24,7 @@ Node::Node(Node* parent, uint16_t action, State* state):
 }
 
 Node::~Node() {
+    delete untakenActions;
     delete state;
     for (auto child : children) {
         delete child;

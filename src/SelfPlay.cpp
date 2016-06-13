@@ -29,6 +29,7 @@ uint8_t SelfPlay::play(State* state) {
             : mcts2.get();
 //state->print();
         mcts->setRoot(action, state);
+        delete state;
         mcts->think();
 
         state = mcts->takeAction();
@@ -36,6 +37,7 @@ uint8_t SelfPlay::play(State* state) {
     }
 //state->print();
     bool draw = state->getWinner() == 0;
+    delete state;
     return !draw
         ? player
         : 0;
