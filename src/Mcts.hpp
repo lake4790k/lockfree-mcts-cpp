@@ -36,9 +36,9 @@ private:
 
     Node* selectOrExpand();
 
-    uint8_t simulate(Node* node, std::mt19937& random);
+    State* simulate(Node* node, std::mt19937& random);
 
-    void backPropagate(Node* node, uint8_t reward);
+    void backPropagate(Node*, State*);
 
     std::atomic<uint64_t> totalIterations;
 

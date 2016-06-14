@@ -84,8 +84,9 @@ void Mcts::doThink() {
 
 void Mcts::growTree(std::mt19937& random) {
     Node* child = selectOrExpand();
-    uint8_t reward = simulate(child, random);
-    backPropagate(child, reward);
+    State* terminalState = simulate(child, random);
+    backPropagate(child, terminalState);
+    delete terminalState;
 }
 
 Node* Mcts::selectOrExpand() {
@@ -100,7 +101,7 @@ Node* Mcts::selectOrExpand() {
     return node;
 }
 
-uint8_t Mcts::simulate(Node* node, std::mt19937& random) {
+State* Mcts::simulate(Node* node, std::mt19937& random) {
     State* state = node->getStateCopy();
     while (!state->isTerminal()) {
         auto actions = state->getAvailableActions();
@@ -110,13 +111,12 @@ uint8_t Mcts::simulate(Node* node, std::mt19937& random) {
         state->applyAction(action);
         delete actions; 
     }
-    uint8_t reward = state->getRewardFor(node->getPreviousAgent());
-    delete state;
-    return reward;
+    return state;
 }
 
-void Mcts::backPropagate(Node* node, uint8_t reward) {
+void Mcts::backPropagate(Node* node, State* terminalState) {
     while (node) {
+        uint8_t reward = terminalState->getRewardFor(node->getPreviousAgent());
         node->updateRewards(reward);
         node = node->getParent();
     }
