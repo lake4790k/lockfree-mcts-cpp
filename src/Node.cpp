@@ -30,7 +30,7 @@ Node::~Node() {
     for (size_t i = 0; i < untakenActions->size(); i++) {
         if (children[i].load() != NULL) delete children[i].load();
     }
-    delete children;
+    delete[] children;
     delete untakenActions;
 }
 
