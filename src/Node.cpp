@@ -115,8 +115,8 @@ Node* Node::getBestChild(double c) {
     while (!best) {
         double bestValue = std::numeric_limits<double>::lowest();
         for (size_t i = 0; i < untakenActions->size(); i++) {
-            if (!children[i].load()) continue;
-            if (!children[i].load()->isVisited()) continue;
+            while (!children[i].load()) {};
+            while (!children[i].load()->isVisited()) {};
 
             double childrenValue = children[i].load()->getUctValue(c);
             if (childrenValue > bestValue) {
