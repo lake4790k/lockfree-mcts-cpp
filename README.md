@@ -1,6 +1,4 @@
-[![Build Status](https://travis-ci.org/lake4790k/lockfree-mcts-cpp.svg?branch=master)](https://travis-ci.org/lake4790k/lockfree-mcts-cpp)
-
-# lockfree-mcts-cpp
+# lockfree-mcts-cpp [![Build Status](https://travis-ci.org/lake4790k/lockfree-mcts-cpp.svg?branch=master)](https://travis-ci.org/lake4790k/lockfree-mcts-cpp)
 General lockfree Monte Carlo Tree Search implementation in Cpp
 
 ### Results
