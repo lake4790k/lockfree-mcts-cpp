@@ -43,7 +43,6 @@ private:
     std::atomic<uint64_t> totalIterations;
 
     std::random_device rd;    
-    std::mt19937 random;
 
     uint64_t timePerActionMillis;
     uint8_t threads;

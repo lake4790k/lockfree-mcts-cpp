@@ -8,8 +8,7 @@ Mcts::Mcts(std::shared_ptr<Threads> pool, uint8_t threads, uint64_t timePerActio
     pool(pool),
     threads(threads), 
     timePerActionMillis(timePerActionMillis), 
-    maxIterations(maxIterations),
-    random(rd()) {   }
+    maxIterations(maxIterations)  {  }
 
 Mcts::~Mcts() {
     delete root;
@@ -67,6 +66,8 @@ State* Mcts::takeAction() {
 
 
 void Mcts::doThink() {
+    std::mt19937 random(rd());
+
     auto start = clock::now();
     uint64_t i = 0;
     for (;;)  {
