@@ -2,6 +2,7 @@
 #include <array>
 #include <thread>
 #include <array>
+#include <vector>
 #include <cstdio>
 #include <string>
 #include <memory>
@@ -20,6 +21,9 @@ Benchmark::Benchmark(int dim, int needed, int times, int maxIterations2):
 
 void Benchmark::run() {
     uint8_t t = 1;
+
+    std::vector<uint8_t> plotSingle, plotMulti;
+
     while (t <= numCpu) {
         std::array<uint16_t, 3> scores = testScores(1, t * maxIterations2);
 
@@ -31,8 +35,11 @@ void Benchmark::run() {
             winPercent,
             scores[0], scores[1], scores[2]);
 
+        plotSingle.push_back(winPercent);
+
         if (t == 1) {
-            t *= 2;
+            plotMulti.push_back(winPercent);
+            t++;
             continue;
         }
 
@@ -47,8 +54,18 @@ void Benchmark::run() {
             winPercent,
             scores2[0], scores2[1], scores2[2]);
 
-        t *= 2;
+        plotMulti.push_back(winPercent);
+
+        t++;
     }        
+
+    for (uint8_t i=0; i<numCpu;i++) {
+        printf("%d\t%d\n", i+1, plotSingle[i]);
+    }
+    printf("\n\n");
+    for (uint8_t i=0; i<numCpu;i++) {
+        printf("%d\t%d\n", i+1, plotMulti[i]);
+    }
 }
 
 
