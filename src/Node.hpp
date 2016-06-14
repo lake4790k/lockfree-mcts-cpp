@@ -53,7 +53,7 @@ private:
     std::atomic<uint64_t> visits{0};
     std::atomic<uint64_t> rewards{0};
 
-    std::vector<Node*> children;
+    std::atomic<Node*>* children;
     std::vector<uint16_t>* untakenActions;
     std::atomic<int16_t> untakenIndex{0};
 

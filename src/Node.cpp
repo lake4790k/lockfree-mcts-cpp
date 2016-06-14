@@ -18,17 +18,20 @@ Node::Node(Node* parent, uint16_t action, State* state):
 
     if (!state) throw std::logic_error("state null!");
 
-    for (int i = 0; i < untakenActions->size(); i++) {
-        children.push_back(NULL);
+    children = new std::atomic<Node*>[untakenActions->size()];
+
+    for (size_t i = 0; i < untakenActions->size(); i++) {
+        children[i] = NULL;
     }
 }
 
 Node::~Node() {
-    delete untakenActions;
     delete state;
-    for (auto child : children) {
-        delete child;
+    for (size_t i = 0; i < untakenActions->size(); i++) {
+        if (children[i].load() != NULL) delete children[i].load();
     }
+    delete children;
+    delete untakenActions;
 }
 
 void Node::releaseParent() {
@@ -37,21 +40,22 @@ void Node::releaseParent() {
 
 void Node::deleteChildrenExcept(Node* except) {
     bool found = false;
-    for (auto child : children) {
-        if (child == except) {
+    for (size_t i = 0; i < untakenActions->size(); i++) {
+        if (children[i].load() == except) {
+            children[i] = NULL;
             found = true;
             continue;
         }
-        delete child;
+        delete children[i].load();
+        children[i] = NULL;
     }
     if (!found) throw std::logic_error("not found child");
-    children.clear();
 }
 
 Node* Node::findChildFor(uint16_t action) {
-    for (auto child : children) {
-        if (!child) continue;
-        if (child->action == action) return child;
+    for (size_t i = 0; i < untakenActions->size(); i++) {
+        if (!children[i].load()) continue;
+        if (children[i].load()->action == action) return children[i].load();
     }
     return NULL;
 }
@@ -110,13 +114,13 @@ Node* Node::getBestChild(double c) {
     Node* best = NULL;
     while (!best) {
         double bestValue = std::numeric_limits<double>::lowest();
-        for (Node* child : children) {
-            if (!child) continue;
-            if (!child->isVisited()) continue;
+        for (size_t i = 0; i < untakenActions->size(); i++) {
+            if (!children[i].load()) continue;
+            if (!children[i].load()->isVisited()) continue;
 
-            double childrenValue = child->getUctValue(c);
+            double childrenValue = children[i].load()->getUctValue(c);
             if (childrenValue > bestValue) {
-                best = child;
+                best = children[i].load();
                 bestValue = childrenValue;
             }
         }
