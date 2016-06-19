@@ -11,3 +11,6 @@ target_link_libraries( benchmark mcts)
 
 add_executable( testThreads src/test/testThreads.cpp )
 target_link_libraries( testThreads mcts)
+
+add_executable( testObjectPool src/test/testObjectPool.cpp )
+target_link_libraries( testObjectPool mcts)
